@@ -1,0 +1,592 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linjer</title>
+<style>
+  :root {
+    --bg: #0e1013; --card: #171a20; --border: #262b33; --fg: #e8e6e1;
+    --muted: #8b929c; --accent: #e8a44c; --accent2: #6fbf8a; --danger: #d97070;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+    padding: 0 0 80px;
+  }
+  header {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 18px 16px 12px; border-bottom: 1px solid var(--border);
+  }
+  .header-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .tabs {
+    display: flex; gap: 6px; padding: 10px 16px 0; max-width: 1012px; margin: 0 auto;
+  }
+  .tab { color: var(--muted); border-color: transparent; background: transparent; }
+  .tab.active { color: var(--fg); background: var(--card); border-color: var(--border); }
+  .panel[hidden] { display: none; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: .5px; }
+  h1 span { color: var(--accent); }
+  .grow { flex: 1; }
+  select, input[type=text], input[type=password] {
+    background: var(--card); color: var(--fg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; font-size: 16px; min-height: 44px;
+  }
+  select:focus, input:focus { outline: 2px solid var(--accent); border-color: transparent; }
+  button {
+    background: var(--card); color: var(--fg); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; font-size: 15px; cursor: pointer;
+    min-height: 44px;
+  }
+  button:active { transform: scale(.97); }
+  button.primary { background: var(--accent); color: #1a1206; border-color: transparent; font-weight: 600; }
+  button.danger { color: var(--danger); }
+  main { padding: 16px; max-width: 980px; margin: 0 auto; }
+  section { margin-bottom: 22px; }
+  .drop {
+    border: 2px dashed var(--border); border-radius: 14px; padding: 22px;
+    text-align: center; color: var(--muted); cursor: pointer;
+  }
+  .drop.drag { border-color: var(--accent); color: var(--accent); }
+  .filelist { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+  .filerow {
+    display: flex; align-items: center; gap: 10px; background: var(--card);
+    border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px;
+    font-size: 14px;
+  }
+  .filerow .fname { font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  .filerow .meta { color: var(--muted); white-space: nowrap; }
+  .searchbar {
+    display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+    position: sticky; top: 0; background: var(--bg); padding: 10px 0; z-index: 5;
+    border-bottom: 1px solid var(--border);
+  }
+  #q {
+    flex: 1 1 240px; font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 17px; min-height: 48px;
+  }
+  .cs-label {
+    display: flex; align-items: center; gap: 4px; color: var(--muted);
+    font-size: 14px; user-select: none; padding: 0 4px;
+  }
+  .stats { color: var(--muted); font-size: 14px; margin: 12px 0 8px; }
+  .stats b { color: var(--accent2); }
+  .results { display: flex; flex-direction: column; gap: 4px; }
+  .row {
+    display: flex; gap: 10px; align-items: baseline; padding: 7px 10px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13.5px;
+    cursor: copy; overflow-wrap: anywhere;
+  }
+  .row:active { border-color: var(--accent); }
+  .row .src { color: var(--muted); font-size: 11px; white-space: nowrap; flex-shrink: 0; }
+  .row .txt { white-space: pre-wrap; }
+  .exportbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 14px 0; }
+  .hist { display: flex; flex-direction: column; gap: 6px; }
+  .histrow {
+    display: flex; gap: 10px; align-items: center; background: transparent;
+    border: 1px dashed var(--border); border-radius: 10px; padding: 8px 12px;
+    font-size: 13.5px; cursor: pointer; color: var(--muted);
+  }
+  .histrow b { color: var(--fg); font-family: ui-monospace, Menlo, monospace; font-weight: 500; }
+  .tag {
+    background: var(--border); border-radius: 6px; padding: 1px 7px; font-size: 11px;
+    color: var(--fg); white-space: nowrap;
+  }
+  h2 { font-size: 15px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin: 26px 0 10px; }
+  #toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: var(--accent); color: #1a1206; font-weight: 600; padding: 12px 20px;
+    border-radius: 12px; opacity: 0; transition: all .25s; pointer-events: none;
+    max-width: 86vw; text-align: center;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .empty { color: var(--muted); text-align: center; padding: 30px 0; }
+  .rowcount { color: var(--muted); margin-left: auto; font-size: 12px; }
+  .chat-controls {
+    display: grid; grid-template-columns: minmax(220px, 1fr) repeat(3, minmax(120px, auto));
+    gap: 8px; position: sticky; top: 0; z-index: 6; background: var(--bg);
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  #chat-q { min-width: 0; }
+  .chat-filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; align-items: center; }
+  .chat-filters select { flex: 1 1 130px; }
+  .chat-grid { display: grid; gap: 9px; }
+  .chat-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 13px 14px; display: grid; gap: 7px;
+  }
+  .chat-card-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+  .chat-card-head .grow { display: none; }
+  .chat-title { min-width: 0; font-weight: 650; line-height: 1.3; overflow-wrap: anywhere; }
+  .chat-meta { display: flex; flex-wrap: wrap; gap: 6px; color: var(--muted); font-size: 12px; }
+  .chat-snippet { color: #c8c6c1; font-size: 13.5px; line-height: 1.45; overflow-wrap: anywhere; }
+  .download {
+    color: #1a1206; background: var(--accent); text-decoration: none; border-radius: 9px;
+    padding: 8px 11px; font-size: 13px; font-weight: 650; white-space: nowrap; flex-shrink: 0;
+  }
+  .more-wrap { text-align: center; margin: 16px 0 30px; }
+  .archive-note { color: var(--muted); margin: 4px 0 14px; }
+  @media (max-width: 900px) {
+    .chat-controls { grid-template-columns: 1fr 1fr; }
+    #chat-q { grid-column: 1 / -1; }
+    .chat-controls select { width: 100%; min-width: 0; }
+    .chat-filters { display: grid; grid-template-columns: 1fr 1fr; }
+    .chat-filters select { width: 100%; min-width: 0; }
+    .chat-filters .cs-label { grid-column: 1 / -1; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Lin<span>jer</span></h1>
+  <div class="grow"></div>
+  <div class="header-tools" id="line-header-controls">
+    <select id="coll" title="Collection"></select>
+    <button id="new-coll">＋ New</button>
+    <button id="del-coll" class="danger">Delete</button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Workspace">
+  <button class="tab active" id="tab-lines">Line workbench</button>
+  <button class="tab" id="tab-chatgpt">ChatGPT archive</button>
+</nav>
+
+<main>
+<div class="panel" id="lines-panel">
+  <section>
+    <div class="drop" id="drop">
+      <b>Drop .txt / .csv files here</b><br>or tap to browse
+      <input type="file" id="files" multiple accept=".txt,.csv,text/plain,text/csv" hidden>
+    </div>
+    <div class="filelist" id="filelist"></div>
+  </section>
+
+  <section>
+    <div class="searchbar">
+      <input type="text" id="q" placeholder="Search lines… (e.g. *Smør* or /^Lurpak/)" autocomplete="off" spellcheck="false">
+      <select id="mode">
+        <option value="substring">Substring</option>
+        <option value="wildcard">Wildcard * ?</option>
+        <option value="regex">Regex</option>
+      </select>
+      <label class="cs-label"><input type="checkbox" id="cs"> Aa</label>
+      <select id="scope">
+        <option value="">This collection</option>
+        <option value="all">All collections</option>
+      </select>
+    </div>
+    <div class="stats" id="stats">Type to search.</div>
+    <div class="results" id="results"></div>
+    <div class="exportbar">
+      <button class="primary" id="export">Export matches (.txt)</button>
+      <input type="text" id="exportname" placeholder="optional export name" style="flex:1 1 180px">
+    </div>
+  </section>
+
+  <section>
+    <h2>Recent searches</h2>
+    <div class="hist" id="history"><div class="empty">Nothing yet.</div></div>
+    <h2>Recent exports</h2>
+    <div class="hist" id="exporthist"><div class="empty">Nothing yet.</div></div>
+  </section>
+</div>
+
+<div class="panel" id="chatgpt-panel" hidden>
+  <section>
+    <div class="chat-controls">
+      <input type="text" id="chat-q" placeholder="Search titles and conversations…" autocomplete="off" spellcheck="false">
+      <select id="chat-year"><option value="all">All years</option></select>
+      <select id="chat-length">
+        <option value="all">Any length</option>
+        <option value="short">Short · under 20 items</option>
+        <option value="medium">Medium · 20–99</option>
+        <option value="long">Long · 100–299</option>
+        <option value="epic">Epic · 300+</option>
+      </select>
+      <select id="chat-sort">
+        <option value="newest">Newest first</option>
+        <option value="oldest">Oldest first</option>
+        <option value="longest">Longest first</option>
+        <option value="shortest">Shortest first</option>
+        <option value="title">Title A–Z</option>
+      </select>
+    </div>
+    <div class="chat-filters">
+      <select id="chat-search-mode">
+        <option value="all-words">All search words</option>
+        <option value="phrase">Exact phrase</option>
+      </select>
+      <select id="chat-search-in">
+        <option value="all">Titles + content</option>
+        <option value="title">Titles only</option>
+        <option value="content">Content only</option>
+      </select>
+      <label class="cs-label"><input type="checkbox" id="chat-reasoning"> Has thoughts or reasoning recap</label>
+    </div>
+    <div class="stats" id="chat-stats">Loading archive…</div>
+    <div class="archive-note" id="chat-summary"></div>
+    <div class="chat-grid" id="chat-results"></div>
+    <div class="more-wrap"><button id="chat-more" hidden>Show more</button></div>
+  </section>
+</div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let meta = { collections: {} };
+let currentColl = localStorage.getItem("linjer.coll") || "";
+let lastSearch = { query: "", mode: "substring", scope: "", caseSensitive: false };
+let chatOffset = 0;
+let chatLoaded = false;
+let chatLoading = false;
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+function fmtBytes(n) {
+  if (n > 1048576) return (n / 1048576).toFixed(1) + " MB";
+  if (n > 1024) return (n / 1024).toFixed(1) + " kB";
+  return n + " B";
+}
+function fmtNum(n) { return n.toLocaleString("da-DK"); }
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  if (!res.ok) {
+    let msg = res.statusText;
+    try { msg = (await res.json()).error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res;
+}
+
+// ---------- state ----------
+async function loadState() {
+  const s = await (await api("/api/state")).json();
+  meta = s.meta;
+  const names = Object.keys(meta.collections);
+  if (!names.includes(currentColl)) currentColl = names[0] || "";
+  const sel = $("#coll");
+  sel.innerHTML = names.map((n) => `<option ${n === currentColl ? "selected" : ""}>${escapeHtml(n)}</option>`).join("");
+  renderFiles();
+  renderHistory(s.history || []);
+  renderExportHist(s.exports || []);
+}
+
+function escapeHtml(s) {
+  return String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+function renderFiles() {
+  const col = meta.collections[currentColl];
+  const list = $("#filelist");
+  if (!col || !col.files.length) {
+    list.innerHTML = `<div class="empty">No files in this collection yet.</div>`;
+    return;
+  }
+  list.innerHTML = col.files.map((f) => `
+    <div class="filerow">
+      <span class="fname">${escapeHtml(f.name)}</span>
+      <span class="grow"></span>
+      <span class="meta">${fmtNum(f.lines)} lines · ${fmtBytes(f.bytes)}</span>
+      <button class="danger delfile" data-file="${escapeHtml(f.name)}" style="min-height:32px;padding:4px 10px">✕</button>
+    </div>`).join("");
+  list.querySelectorAll(".delfile").forEach((b) =>
+    b.addEventListener("click", async () => {
+      if (!confirm(`Delete ${b.dataset.file}?`)) return;
+      await api("/api/delete-file", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ collection: currentColl, file: b.dataset.file }),
+      });
+      toast("File deleted");
+      loadState();
+    }));
+}
+
+function renderHistory(h) {
+  const el = $("#history");
+  if (!h.length) { el.innerHTML = `<div class="empty">Nothing yet.</div>`; return; }
+  el.innerHTML = h.map((x) => `
+    <div class="histrow" data-q="${escapeHtml(x.q)}" data-mode="${x.mode}" data-scope="${escapeHtml(x.scope)}">
+      <b>${escapeHtml(x.q || "(all)")}</b>
+      <span class="tag">${x.mode}</span>
+      ${x.scope === "all" ? '<span class="tag">all</span>' : ""}
+      <span class="grow"></span>
+      <span>${fmtNum(x.count)} hits</span>
+    </div>`).join("");
+  el.querySelectorAll(".histrow").forEach((r) =>
+    r.addEventListener("click", () => {
+      $("#q").value = r.dataset.q;
+      $("#mode").value = r.dataset.mode;
+      $("#scope").value = r.dataset.scope === "all" ? "all" : "";
+      doSearch();
+    }));
+}
+
+function renderExportHist(xs) {
+  const el = $("#exporthist");
+  if (!xs.length) { el.innerHTML = `<div class="empty">Nothing yet.</div>`; return; }
+  el.innerHTML = xs.map((x) => `
+    <div class="histrow" data-name="${escapeHtml(x.name)}">
+      <b>${escapeHtml(x.name)}</b>
+      <span class="grow"></span>
+      <span>${fmtNum(x.count)} lines</span>
+    </div>`).join("");
+  el.querySelectorAll(".histrow").forEach((r) =>
+    r.addEventListener("click", () => {
+      window.location.href = "/api/exports/" + encodeURIComponent(r.dataset.name);
+    }));
+}
+
+// ---------- search ----------
+async function doSearch() {
+  const query = $("#q").value;
+  lastSearch = {
+    query,
+    mode: $("#mode").value,
+    scope: $("#scope").value === "all" ? "all" : currentColl,
+    caseSensitive: $("#cs").checked,
+  };
+  if (!lastSearch.scope) { $("#stats").textContent = "No collection selected."; return; }
+  try {
+    const res = await (await api("/api/search", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(lastSearch),
+    })).json();
+    $("#stats").innerHTML =
+      `<b>${fmtNum(res.total)}</b> matching lines` +
+      (res.capped ? ` — showing first ${fmtNum(res.matches.length)}` : "");
+    const box = $("#results");
+    if (!res.matches.length) {
+      box.innerHTML = `<div class="empty">No matches.</div>`;
+    } else {
+      box.innerHTML = res.matches.map((m) => `
+        <div class="row" data-txt="${escapeHtml(m.text)}">
+          <span class="src">${escapeHtml(m.collection)}/${escapeHtml(m.file)}:${m.line}</span>
+          <span class="txt">${escapeHtml(m.text)}</span>
+        </div>`).join("");
+      box.querySelectorAll(".row").forEach((r) =>
+        r.addEventListener("click", () => {
+          navigator.clipboard?.writeText(r.dataset.txt).then(() => toast("Line copied")).catch(() => {});
+        }));
+    }
+    loadStateSoft();
+  } catch (e) {
+    $("#stats").textContent = "Error: " + e.message;
+  }
+}
+
+async function loadStateSoft() {
+  try {
+    const s = await (await api("/api/state")).json();
+    renderHistory(s.history || []);
+    renderExportHist(s.exports || []);
+  } catch {}
+}
+
+let debounce;
+$("#q").addEventListener("input", () => {
+  clearTimeout(debounce);
+  debounce = setTimeout(doSearch, 280);
+});
+$("#mode").addEventListener("change", doSearch);
+$("#cs").addEventListener("change", doSearch);
+$("#scope").addEventListener("change", doSearch);
+
+// ---------- export ----------
+$("#export").addEventListener("click", async () => {
+  try {
+    const res = await api("/api/export", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...lastSearch, name: $("#exportname").value }),
+    });
+    const blob = await res.blob();
+    const cd = res.headers.get("Content-Disposition") || "";
+    const m = cd.match(/filename\*=UTF-8''([^;]+)/);
+    const fname = m ? decodeURIComponent(m[1]) : "linjer-export.txt";
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = fname;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("Exported " + fname + " — also saved to the linjer/exports folder");
+    loadStateSoft();
+  } catch (e) {
+    toast("Export failed: " + e.message);
+  }
+});
+
+// ---------- collections ----------
+$("#coll").addEventListener("change", () => {
+  currentColl = $("#coll").value;
+  localStorage.setItem("linjer.coll", currentColl);
+  renderFiles();
+  if ($("#q").value) doSearch();
+});
+$("#new-coll").addEventListener("click", async () => {
+  const name = prompt("Collection name:");
+  if (!name) return;
+  try {
+    const r = await (await api("/api/collections", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    })).json();
+    currentColl = r.name;
+    localStorage.setItem("linjer.coll", currentColl);
+    toast("Collection created");
+    loadState();
+  } catch (e) { toast(e.message); }
+});
+$("#del-coll").addEventListener("click", async () => {
+  if (!currentColl) return;
+  if (!confirm(`Delete collection "${currentColl}" and all its files?`)) return;
+  await api("/api/collections/" + encodeURIComponent(currentColl), { method: "DELETE" });
+  currentColl = "";
+  toast("Collection deleted");
+  loadState();
+});
+
+// ---------- upload ----------
+const drop = $("#drop");
+drop.addEventListener("click", () => $("#files").click());
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("drag"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("drag"));
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  drop.classList.remove("drag");
+  upload(e.dataTransfer.files);
+});
+$("#files").addEventListener("change", () => upload($("#files").files));
+
+async function upload(fileList) {
+  if (!currentColl) { toast("Create a collection first"); return; }
+  if (!fileList.length) return;
+  const fd = new FormData();
+  fd.append("collection", currentColl);
+  for (const f of fileList) fd.append("files", f);
+  toast(`Uploading ${fileList.length} file(s)…`);
+  try {
+    const r = await (await api("/api/upload", { method: "POST", body: fd })).json();
+    let msg = `Added ${r.added.length} file(s)`;
+    if (r.skipped.length) msg += ` — skipped: ${r.skipped.map((s) => s.name + " (" + s.reason + ")").join(", ")}`;
+    toast(msg);
+    $("#files").value = "";
+    loadState();
+  } catch (e) { toast("Upload failed: " + e.message); }
+}
+
+// ---------- workspace tabs ----------
+function setTab(name) {
+  const chat = name === "chatgpt";
+  $("#lines-panel").hidden = chat;
+  $("#chatgpt-panel").hidden = !chat;
+  $("#line-header-controls").hidden = chat;
+  $("#tab-lines").classList.toggle("active", !chat);
+  $("#tab-chatgpt").classList.toggle("active", chat);
+  localStorage.setItem("linjer.tab", chat ? "chatgpt" : "lines");
+  if (chat && !chatLoaded) loadChats(false);
+}
+$("#tab-lines").addEventListener("click", () => setTab("lines"));
+$("#tab-chatgpt").addEventListener("click", () => setTab("chatgpt"));
+
+// ---------- ChatGPT archive ----------
+function chatQuery(offset) {
+  const params = new URLSearchParams({
+    q: $("#chat-q").value,
+    searchMode: $("#chat-search-mode").value,
+    searchIn: $("#chat-search-in").value,
+    year: $("#chat-year").value,
+    length: $("#chat-length").value,
+    reasoning: $("#chat-reasoning").checked ? "1" : "0",
+    sort: $("#chat-sort").value,
+    offset: String(offset),
+    limit: "100",
+  });
+  return params.toString();
+}
+
+function renderChatCards(items, append) {
+  const box = $("#chat-results");
+  const html = items.map((item) => {
+    const date = item.created ? item.created.slice(0, 10) : "Unknown date";
+    const reasoning = item.thoughts + item.reasoningRecaps;
+    return `<article class="chat-card">
+      <div class="chat-card-head">
+        <div class="chat-title">${escapeHtml(item.title)}</div>
+        <span class="grow"></span>
+        <a class="download" href="/api/chatgpt/download/${encodeURIComponent(item.id)}">Download .md</a>
+      </div>
+      <div class="chat-meta">
+        <span class="tag">${escapeHtml(date)}</span>
+        <span class="tag">${escapeHtml(item.length)}</span>
+        <span>${fmtNum(item.messages)} items</span>
+        <span>${fmtBytes(item.bytes)}</span>
+        ${reasoning ? `<span>${fmtNum(reasoning)} reasoning records</span>` : ""}
+      </div>
+      ${item.snippet ? `<div class="chat-snippet">${escapeHtml(item.snippet)}</div>` : ""}
+    </article>`;
+  }).join("");
+  if (append) box.insertAdjacentHTML("beforeend", html);
+  else box.innerHTML = html || `<div class="empty">No conversations match these filters.</div>`;
+}
+
+async function loadChats(append) {
+  if (chatLoading) return;
+  chatLoading = true;
+  const nextOffset = append ? chatOffset : 0;
+  $("#chat-stats").textContent = append ? "Loading more…" : "Searching archive…";
+  try {
+    const result = await (await api("/api/chatgpt?" + chatQuery(nextOffset))).json();
+    chatLoaded = true;
+    if (!result.archiveAvailable) {
+      $("#chat-stats").textContent = "ChatGPT archive folder is unavailable.";
+      $("#chat-summary").textContent = result.archivePath || "";
+      return;
+    }
+    if ($("#chat-year").options.length === 1) {
+      $("#chat-year").insertAdjacentHTML("beforeend", result.years.map((year) =>
+        `<option value="${escapeHtml(year)}">${escapeHtml(year)}</option>`).join(""));
+    }
+    renderChatCards(result.items, append);
+    chatOffset = nextOffset + result.items.length;
+    $("#chat-stats").innerHTML = `<b>${fmtNum(result.total)}</b> matching conversations`;
+    $("#chat-summary").textContent =
+      `${fmtNum(result.stats.conversations)} total · ${fmtBytes(result.stats.bytes)} Markdown · ` +
+      `${fmtNum(result.stats.withReasoning)} with reasoning records`;
+    $("#chat-more").hidden = !result.hasMore;
+  } catch (error) {
+    $("#chat-stats").textContent = "Error: " + error.message;
+  } finally {
+    chatLoading = false;
+  }
+}
+
+let chatDebounce;
+$("#chat-q").addEventListener("input", () => {
+  clearTimeout(chatDebounce);
+  chatDebounce = setTimeout(() => loadChats(false), 260);
+});
+for (const selector of ["#chat-year", "#chat-length", "#chat-sort", "#chat-search-mode", "#chat-search-in", "#chat-reasoning"]) {
+  $(selector).addEventListener("change", () => loadChats(false));
+}
+$("#chat-more").addEventListener("click", () => loadChats(true));
+
+loadState();
+setTab(localStorage.getItem("linjer.tab") || "lines");
+</script>
+</body>
+</html>
