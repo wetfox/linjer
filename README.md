@@ -4,6 +4,10 @@
 
 Linjer brings two kinds of text search into one browser UI: line-by-line search across uploaded `.txt` and `.csv` files, and discovery across a locally exported ChatGPT archive. It is built for finding a useful line or conversation without remembering which file or folder it lives in.
 
+![Linjer showing six search results across two fictional demo files](docs/linjer-demo.jpg)
+
+*Screenshot uses fictional demo notes in a separate instance.*
+
 ## What it can do
 
 ### Search text collections
